@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Music Sync</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Real-Time Music Sync</h1>
+    <button id="playButton">Play</button>
+    <button id="pauseButton">Pause</button>
+    <p id="status">Status: Paused</p>
+
+    <script>
+        const socket = io();
+
+        const playButton = document.getElementById('playButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const status = document.getElementById('status');
+
+        let audio = new Audio('./song.mp3'); // Replace with your song file
+
+        socket.on('sync_state', (timeline) => {
+    if (timeline.isPlaying) {
+        const elapsedTime = (Date.now() / 1000) - timeline.timestamp;
+        if (!isNaN(elapsedTime) && elapsedTime >= 0 && elapsedTime <= audio.duration) {
+            audio.currentTime = elapsedTime;
+            audio.play();
+            status.textContent = 'Status: Playing';
+        }
+    } else {
+        if (!isNaN(timeline.timestamp) && timeline.timestamp >= 0 && timeline.timestamp <= audio.duration) {
+            audio.currentTime = timeline.timestamp;
+        }
+        audio.pause();
+        status.textContent = 'Status: Paused';
+    }
+});
+
+socket.on('update_state', (timeline) => {
+    if (timeline.isPlaying) {
+        const elapsedTime = (Date.now() / 1000) - timeline.timestamp;
+        if (!isNaN(elapsedTime) && elapsedTime >= 0 && elapsedTime <= audio.duration) {
+            audio.currentTime = elapsedTime;
+            audio.play();
+            status.textContent = 'Status: Playing';
+        }
+    } else {
+        if (!isNaN(timeline.timestamp) && timeline.timestamp >= 0 && timeline.timestamp <= audio.duration) {
+            audio.currentTime = timeline.timestamp;
+        }
+        audio.pause();
+        status.textContent = 'Status: Paused';
+    }
+});
+
+        playButton.addEventListener('click', () => {
+            socket.emit('play');
+        });
+
+        pauseButton.addEventListener('click', () => {
+            socket.emit('pause');
+        });
+
+        audio.addEventListener('ended', () => {
+            socket.emit('pause');
+        });
+    </script>
+</body>
+</html>
